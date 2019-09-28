@@ -1,0 +1,159 @@
+
+    private void clic_crear() {
+        if (px.size() < 2) {
+            JOptionPane.showMessageDialog(null, "Se requieren al menos 2 puntos de anclaje");
+        } else {
+            int ancho, alto, escala;
+            double parametrot;
+
+            ancho = (fancho.getText().isEmpty()) ? 0 : Integer.parseInt(fancho.getText());
+            alto = (falto.getText().isEmpty()) ? 0 : Integer.parseInt(falto.getText());
+            escala = (fescala.getText().isEmpty()) ? 0 : Integer.parseInt(fescala.getText());
+            parametrot = Double.parseDouble(pt.getText());
+            curvaBezier(ancho, alto, escala, parametrot);
+        }
+    }
+
+    private void clic_agregar() {  
+        // TODO add your handling code here:
+        String campo_add = tf_punto.getText().trim();
+     Pattern p = Pattern.compile("([0-9]+[.]?[0-9]?),([0-9]+[.]?[0-9]?)");
+        Matcher m = p.matcher(campo_add);
+        if (m.matches()) {
+            tf_punto.setText("");
+            String[] res = m.group(0).split(",");
+            px.add(Double.parseDouble(res[0]));
+            py.add(Double.parseDouble(res[1]));
+            rellenar_tabla();
+        } else { 
+      JOptionPane.showMessageDialog(null, "Ingresa coordenadas válidas");
+        }
+    }
+
+    private void clic_eliminar() {
+        int seleccionado = tablapuntos.getSelectedRow();
+        if (seleccionado >= 0) {
+            px.remove(seleccionado);
+            py.remove(seleccionado);
+            rellenar_tabla();
+        } else {
+            JOptionPane.showMessageDialog(null, "Selecciona un punto de anclaje a eliminar!");
+        }
+    }
+
+   private void curvaBezier(int ancho, int alto, int escala, double parametro_t) {
+        BufferedImage picture = 
+        new BufferedImage(ancho * escala, alto * escala, BufferedImage.TYPE_INT_RGB);
+
+        Graphics g = picture.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, ancho * escala, alto * escala);
+        g.setColor(new Color(0, 0, 0, 0.1f));
+
+        for (int i = escala; i <= ancho * escala; i += escala) {
+            g.fillRect(i, 0, 1, alto * escala);
+        }
+        for (int i = escala; i <= alto * escala; i += escala) {
+            g.fillRect(0, i, ancho * escala, 1);
+        }
+
+        g.setColor(Color.red);
+        double it = 0, fpx, fpy;
+        while (it <= 1) {
+            fpx = funcionParametrica(px, it) * escala;
+            fpy = funcionParametrica(py, it) * escala;
+
+            //System.out.println("t: "+it+" x:"+fpx/escala+" y:"+fpy/escala);
+            g.fillRect((int) fpx, (int) (alto * escala - fpy), 1, 1);
+
+            it += parametro_t;// / escala;
+        }
+
+        // dibujando puntos de anclaje
+        g.setColor(Color.blue);
+
+        //punto 0
+        for (int i = 0; i < px.size(); i++) {
+            g.fillOval((int) (px.get(i) * escala - (0.05 * escala)), (int) (alto * escala - py.get(i) * escala - (0.05 * escala)), (int) (0.1 * escala), (int) (0.1 * escala));
+            g.drawString("Punto " + (i + 1), (int) (px.get(i) * escala) + 5, (int) (alto * escala - py.get(i) * escala) - 5);
+        }
+
+        labelshow.setIcon(new ImageIcon(picture));
+
+    }
+
+private void pre_grafica() {
+        int ancho, alto, escala;
+        ancho = Integer.valueOf(fancho.getText());
+        alto = Integer.valueOf(falto.getText());
+        escala = Integer.valueOf(fescala.getText());
+        BufferedImage picture = 
+                new BufferedImage(ancho * escala, 
+                        alto * escala, BufferedImage.TYPE_INT_RGB);
+
+        Graphics g = picture.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, ancho * escala, alto * escala);
+        g.setColor(new Color(0, 0, 0, 0.1f));
+
+        for (int i = escala; i <= ancho * escala; i += escala) {
+            g.fillRect(i, 0, 1, alto * escala);
+        }
+        for (int i = escala; i <= alto * escala; i += escala) {
+            g.fillRect(0, i, ancho * escala, 1);
+        }
+
+        // dibujando puntos de anclaje
+        g.setColor(Color.blue);
+
+        //punto 0
+        for (int i = 0; i < px.size(); i++) {
+            g.fillOval((int) (px.get(i) * escala - (0.05 * escala)), 
+          (int) (alto * escala - py.get(i) * escala - (0.05 * escala)), 
+            (int) (0.1 * escala), (int) (0.1 * escala));
+            g.drawString("Punto " + i, 
+                    (int) (px.get(i) * escala) + 5, 
+                    (int) (alto * escala - py.get(i) * escala) - 5);
+        }
+
+        labelshow.setIcon(new ImageIcon(picture));
+
+    }
+
+
+    private double funcionParametrica(ArrayList<Double> puntos, double t){
+        double restemp = 0;
+         
+        for (int i = 0; i < puntos.size(); i++) {
+           restemp += 
+           puntos.get(i) * combinaciones(puntos.size() - 1, i) * 
+           Math.pow(t, i) * Math.pow((1 - t), 
+                   (puntos.size() - 1 - i));
+        }
+
+        return restemp;
+    }
+    
+ private int factorial(int numero) {
+        if (numero > 1) {
+            return numero * factorial(numero - 1);
+        } else {
+            return 1;
+        }
+    }
+ 
+    private int combinaciones(int n, int m) {
+        return factorial(n) / (factorial(m) * factorial(n - m));
+    }
+
+   
+
+    private void rellenar_tabla() {
+        DefaultTableModel tabla_modelo = 
+                (DefaultTableModel) tablapuntos.getModel();
+        tabla_modelo.setRowCount(0);
+        for (int i = 0; i < px.size(); i++) {
+            tabla_modelo.addRow(new Object[]{i+1, px.get(i), py.get(i)});
+        }
+        pre_grafica();
+    }
